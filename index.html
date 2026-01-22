@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Выборг Гид</title>
     
-    <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <!-- Яндекс.Карты API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=296d4616-ae0d-4671-ac28-87e99dd2b07f"></script>
     
     <style>
@@ -26,10 +23,6 @@
         #map {
             width: 100vw;
             height: 100vh;
-        }
-        
-        /* СЕПИЯ ДЛЯ КАРТЫ */
-        #map {
             filter: grayscale(100%) sepia(35%) brightness(92%);
             -webkit-filter: grayscale(100%) sepia(35%) brightness(92%);
         }
@@ -125,18 +118,14 @@
     </div>
 
     <script>
-        // Инициализация Telegram Web App
         let tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
         
-        // URL твоего n8n API
         const API_URL = 'https://6300143-tb547847.twc1.net/webhook/get-points';
-        
         let map;
         let points = [];
         
-        // Загрузка точек из API
         async function loadPoints() {
             try {
                 console.log('Загружаю точки из:', API_URL);
@@ -172,7 +161,6 @@
             }
         }
         
-        // Инициализация карты с кастомными иконками
         function initMap() {
             ymaps.ready(() => {
                 map = new ymaps.Map('map', {
@@ -181,30 +169,21 @@
                     controls: ['zoomControl', 'geolocationControl']
                 });
                 
-                // Названия файлов иконок (в порядке ID точек в базе)
-                const iconNames = ['castle', 'library', 'monrepos', 'tower', 'square'];
+                const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
                 
-                // Добавляем точки на карту с кастомными иконками
                 points.forEach((point, index) => {
                     const placemark = new ymaps.Placemark(
                         [parseFloat(point.latitude), parseFloat(point.longitude)],
                         {
                             balloonContent: point.name,
-                            hintContent: point.name
+                            hintContent: `${index + 1}. ${point.name}`,
+                            iconContent: (index + 1).toString()
                         },
                         {
-                            iconLayout: 'default#image',
-                            iconImageHref: `https://whiteside46.github.io/vyborg-tour/icons/${iconNames[index]}.png`,
-                            iconImageSize: [50, 50],
-                            iconImageOffset: [-25, -50]
+                            preset: 'islands#redStretchyIcon',
+                            iconColor: point.is_premium ? '#FFD700' : colors[index % colors.length]
                         }
                     );
-                    
-                    // Premium-точки крупнее
-                    if (point.is_premium) {
-                        placemark.options.set('iconImageSize', [60, 60]);
-                        placemark.options.set('iconImageOffset', [-30, -60]);
-                    }
                     
                     placemark.events.add('click', () => {
                         showPointInfo(point);
@@ -217,7 +196,6 @@
             });
         }
         
-        // Показать информацию о точке
         function showPointInfo(point) {
             const content = `
                 <h2>
@@ -235,12 +213,10 @@
             document.getElementById('pointInfo').classList.add('active');
         }
         
-        // Закрыть информацию
         function closeInfo() {
             document.getElementById('pointInfo').classList.remove('active');
         }
         
-        // Запуск
         loadPoints();
     </script>
 </body>
