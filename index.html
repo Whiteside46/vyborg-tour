@@ -191,28 +191,50 @@
         
         document.getElementById('loading').style.display = 'none';
         
-        // ПРИМЕНЯЕМ СЕПИЮ ЧЕРЕЗ JAVASCRIPT
+        // Ждём полной загрузки карты
+        map.events.add('actionend', function() {
+            setTimeout(() => {
+                applySepia();
+            }, 1000);
+        });
+        
+        // Дополнительный вызов на случай если событие не сработает
         setTimeout(() => {
             applySepia();
-        }, 500);
+        }, 2000);
     });
 }
 
-// ФУНКЦИЯ ПРИМЕНЕНИЯ СЕПИИ - ДОБАВЬ ПОСЛЕ initMap()
 function applySepia() {
+    console.log('Применяю сепию...');
+    
     // Находим слой с тайлами карты
     const layersPane = document.querySelector('.ymaps-layers-pane');
+    
     if (layersPane) {
+        console.log('Слой карты найден!');
         layersPane.style.filter = 'grayscale(100%) sepia(35%) brightness(92%)';
         layersPane.style.webkitFilter = 'grayscale(100%) sepia(35%) brightness(92%)';
+        
+        // Применяем ко всем дочерним элементам
+        const children = layersPane.querySelectorAll('*');
+        children.forEach(child => {
+            child.style.filter = 'inherit';
+        });
+    } else {
+        console.log('Слой карты НЕ найден, пробую еще раз...');
+        setTimeout(applySepia, 500);
     }
     
     // Убираем фильтр с иконок
-    const images = document.querySelectorAll('.ymaps-image-with-content');
-    images.forEach(img => {
-        img.style.filter = 'none';
-        img.style.webkitFilter = 'none';
-    });
+    setTimeout(() => {
+        const images = document.querySelectorAll('.ymaps-image-with-content, .ymaps-image-with-content *');
+        console.log('Найдено иконок:', images.length);
+        images.forEach(img => {
+            img.style.filter = 'none !important';
+            img.style.webkitFilter = 'none !important';
+        });
+    }, 100);
 }
 
         
@@ -241,6 +263,7 @@ function applySepia() {
     </script>
 </body>
 </html>
+
 
 
 
