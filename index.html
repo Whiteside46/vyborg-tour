@@ -23,24 +23,19 @@
     #map {
         width: 100vw;
         height: 100vh;
-        filter: grayscale(100%) sepia(35%) brightness(92%);
-        -webkit-filter: grayscale(100%) sepia(35%) brightness(92%);
     }
     
-    #map * {
-        filter: inherit;
-    }
-    
-    .ymaps-layers-pane,
-    .ymaps-ground-pane,
-    [class*="ymaps"] {
+    /* СЕПИЯ ТОЛЬКО ДЛЯ СЛОЕВ КАРТЫ */
+    .ymaps-layers-pane {
         filter: grayscale(100%) sepia(35%) brightness(92%) !important;
+        -webkit-filter: grayscale(100%) sepia(35%) brightness(92%) !important;
     }
     
-    /* ЦВЕТНЫЕ ИКОНКИ НА СЕПИЯ-ФОНЕ */
+    /* ЦВЕТНЫЕ ИКОНКИ */
+    .ymaps-image-with-content img,
     .ymaps-image-with-content,
-    [class*="ymaps-image"],
-    .ymaps-placemark-overlay {
+    ymaps[class*="placemark"],
+    [class*="ground-pane"] ~ * {
         filter: none !important;
         -webkit-filter: none !important;
     }
@@ -116,6 +111,7 @@
         margin-left: 8px;
     }
 </style>
+
 
 </head>
 <body>
@@ -239,6 +235,7 @@
     </script>
 </body>
 </html>
+
 
 
 
