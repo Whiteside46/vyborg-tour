@@ -29,13 +29,21 @@
         }
         
         /* СЕПИЯ ДЛЯ КАРТЫ */
-        .ymaps-layers-pane {
-            filter: grayscale(100%) sepia(35%) brightness(92%);
-            -webkit-filter: grayscale(100%) sepia(35%) brightness(92%);
-            -moz-filter: grayscale(100%) sepia(35%) brightness(92%);
-            -ms-filter: grayscale(100%) sepia(35%) brightness(92%);
-            -o-filter: grayscale(100%) sepia(35%) brightness(92%);
-        }
+       #map {
+    filter: grayscale(100%) sepia(40%) brightness(90%);
+    -webkit-filter: grayscale(100%) sepia(40%) brightness(90%);
+}
+
+#map * {
+    filter: inherit;
+}
+
+/* На всякий случай дублируем для слоёв Яндекса */
+.ymaps-layers-pane,
+.ymaps-ground-pane,
+[class*="ymaps"] {
+    filter: grayscale(100%) sepia(40%) brightness(90%) !important;
+}
         
         /* Если слишком серо, попробуй эти варианты:
         
@@ -245,3 +253,4 @@
     </script>
 </body>
 </html>
+
