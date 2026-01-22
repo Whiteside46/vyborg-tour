@@ -181,37 +181,37 @@
                     controls: ['zoomControl', 'geolocationControl']
                 });
                 
-                // Названия файлов иконок (в порядке ID точек в базе)
-               iconImageHref: `https://whiteside46.github.io/vyborg-tour/icons/${point.icon_name}.png`
-                
                 // Добавляем точки на карту с кастомными иконками
-              points.forEach((point, index) => {
-    const placemark = new ymaps.Placemark(
-        [parseFloat(point.latitude), parseFloat(point.longitude)],
-        {
-            balloonContent: point.name,
-            hintContent: point.name
-        },
-        {
-            iconLayout: 'default#image',
-            iconImageHref: `https://whiteside46.github.io/vyborg-tour/icons/${point.icon_name}.png`,
-            iconImageSize: [50, 50],
-            iconImageOffset: [-25, -50]
+                points.forEach((point, index) => {
+                    const placemark = new ymaps.Placemark(
+                        [parseFloat(point.latitude), parseFloat(point.longitude)],
+                        {
+                            balloonContent: point.name,
+                            hintContent: point.name
+                        },
+                        {
+                            iconLayout: 'default#image',
+                            iconImageHref: `https://whiteside46.github.io/vyborg-tour/icons/${point.icon_name}.png`,
+                            iconImageSize: [50, 50],
+                            iconImageOffset: [-25, -50]
+                        }
+                    );
+                    
+                    if (point.is_premium) {
+                        placemark.options.set('iconImageSize', [60, 60]);
+                        placemark.options.set('iconImageOffset', [-30, -60]);
+                    }
+                    
+                    placemark.events.add('click', () => {
+                        showPointInfo(point);
+                    });
+                    
+                    map.geoObjects.add(placemark);
+                });
+                
+                document.getElementById('loading').style.display = 'none';
+            });
         }
-    );
-    
-    if (point.is_premium) {
-        placemark.options.set('iconImageSize', [60, 60]);
-        placemark.options.set('iconImageOffset', [-30, -60]);
-    }
-    
-    placemark.events.add('click', () => {
-        showPointInfo(point);
-    });
-    
-    map.geoObjects.add(placemark);
-});
-
         
         // Показать информацию о точке
         function showPointInfo(point) {
@@ -241,4 +241,3 @@
     </script>
 </body>
 </html>
-
