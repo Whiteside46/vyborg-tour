@@ -29,36 +29,20 @@
         }
         
         /* СЕПИЯ ДЛЯ КАРТЫ */
-       #map {
-    filter: grayscale(100%) sepia(40%) brightness(90%);
-    -webkit-filter: grayscale(100%) sepia(40%) brightness(90%);
-}
-
-#map * {
-    filter: inherit;
-}
-
-/* На всякий случай дублируем для слоёв Яндекса */
-.ymaps-layers-pane,
-.ymaps-ground-pane,
-[class*="ymaps"] {
-    filter: grayscale(100%) sepia(40%) brightness(90%) !important;
-}
+        #map {
+            filter: grayscale(100%) sepia(35%) brightness(92%);
+            -webkit-filter: grayscale(100%) sepia(35%) brightness(92%);
+        }
         
-        /* Если слишком серо, попробуй эти варианты:
+        #map * {
+            filter: inherit;
+        }
         
-        ЛЁГКАЯ СЕПИЯ (чуть заметная):
-        filter: grayscale(80%) sepia(20%) brightness(95%);
-        
-        СРЕДНЯЯ СЕПИЯ (сбалансированная):
-        filter: grayscale(100%) sepia(35%) brightness(92%);
-        
-        СИЛЬНАЯ СЕПИЯ (винтаж):
-        filter: grayscale(100%) sepia(50%) brightness(85%);
-        
-        ТЁПЛАЯ СЕПИЯ (бежевая):
-        filter: grayscale(100%) sepia(45%) brightness(95%) contrast(90%);
-        */
+        .ymaps-layers-pane,
+        .ymaps-ground-pane,
+        [class*="ymaps"] {
+            filter: grayscale(100%) sepia(35%) brightness(92%) !important;
+        }
         
         #loading {
             position: fixed;
@@ -144,7 +128,7 @@
         // Инициализация Telegram Web App
         let tg = window.Telegram.WebApp;
         tg.ready();
-        tg.expand(); // На весь экран
+        tg.expand();
         
         // URL твоего n8n API
         const API_URL = 'https://6300143-tb547847.twc1.net/webhook/get-points';
@@ -152,7 +136,7 @@
         let map;
         let points = [];
         
-        // Загрузка точек из API (ИСПРАВЛЕНО)
+        // Загрузка точек из API
         async function loadPoints() {
             try {
                 console.log('Загружаю точки из:', API_URL);
@@ -161,16 +145,13 @@
                 
                 console.log('Полученные данные:', data);
                 
-                // Проверяем формат данных и преобразуем в массив
                 if (Array.isArray(data)) {
                     points = data;
                 } else if (data && typeof data === 'object') {
-                    // Если пришёл объект, берём первое значение которое массив
                     const firstArray = Object.values(data).find(v => Array.isArray(v));
                     if (firstArray) {
                         points = firstArray;
                     } else {
-                        // Если это один объект - делаем массив из одного элемента
                         points = [data];
                     }
                 } else {
@@ -191,17 +172,20 @@
             }
         }
         
-        // Инициализация карты
+        // Инициализация карты с кастомными иконками
         function initMap() {
             ymaps.ready(() => {
                 map = new ymaps.Map('map', {
-                    center: [60.7136, 28.7431], // Центр Выборга
+                    center: [60.7136, 28.7431],
                     zoom: 14,
                     controls: ['zoomControl', 'geolocationControl']
                 });
                 
-                // Добавляем точки на карту
-                points.forEach(point => {
+                // Названия файлов иконок (в порядке ID точек в базе)
+                const iconNames = ['castle', 'library', 'monrepos', 'tower', 'square'];
+                
+                // Добавляем точки на карту с кастомными иконками
+                points.forEach((point, index) => {
                     const placemark = new ymaps.Placemark(
                         [parseFloat(point.latitude), parseFloat(point.longitude)],
                         {
@@ -209,10 +193,18 @@
                             hintContent: point.name
                         },
                         {
-                            preset: point.is_premium ? 'islands#goldIcon' : 'islands#blueIcon',
-                            iconColor: point.is_premium ? '#FFD700' : '#0095FF'
+                            iconLayout: 'default#image',
+                            iconImageHref: `https://whiteside46.github.io/vyborg-tour/icons/${iconNames[index]}.png`,
+                            iconImageSize: [50, 50],
+                            iconImageOffset: [-25, -50]
                         }
                     );
+                    
+                    // Premium-точки крупнее
+                    if (point.is_premium) {
+                        placemark.options.set('iconImageSize', [60, 60]);
+                        placemark.options.set('iconImageOffset', [-30, -60]);
+                    }
                     
                     placemark.events.add('click', () => {
                         showPointInfo(point);
@@ -253,4 +245,3 @@
     </script>
 </body>
 </html>
-
