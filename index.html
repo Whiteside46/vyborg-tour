@@ -28,6 +28,30 @@
             height: 100vh;
         }
         
+        /* СЕПИЯ ДЛЯ КАРТЫ */
+        .ymaps-layers-pane {
+            filter: grayscale(100%) sepia(35%) brightness(92%);
+            -webkit-filter: grayscale(100%) sepia(35%) brightness(92%);
+            -moz-filter: grayscale(100%) sepia(35%) brightness(92%);
+            -ms-filter: grayscale(100%) sepia(35%) brightness(92%);
+            -o-filter: grayscale(100%) sepia(35%) brightness(92%);
+        }
+        
+        /* Если слишком серо, попробуй эти варианты:
+        
+        ЛЁГКАЯ СЕПИЯ (чуть заметная):
+        filter: grayscale(80%) sepia(20%) brightness(95%);
+        
+        СРЕДНЯЯ СЕПИЯ (сбалансированная):
+        filter: grayscale(100%) sepia(35%) brightness(92%);
+        
+        СИЛЬНАЯ СЕПИЯ (винтаж):
+        filter: grayscale(100%) sepia(50%) brightness(85%);
+        
+        ТЁПЛАЯ СЕПИЯ (бежевая):
+        filter: grayscale(100%) sepia(45%) brightness(95%) contrast(90%);
+        */
+        
         #loading {
             position: fixed;
             top: 50%;
