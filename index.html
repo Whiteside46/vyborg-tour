@@ -161,40 +161,49 @@
             }
         }
         
-        function initMap() {
-            ymaps.ready(() => {
-                map = new ymaps.Map('map', {
-                    center: [60.7136, 28.7431],
-                    zoom: 14,
-                    controls: ['zoomControl', 'geolocationControl']
-                });
-                
-                const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
-                
-                points.forEach((point, index) => {
-                    const placemark = new ymaps.Placemark(
-                        [parseFloat(point.latitude), parseFloat(point.longitude)],
-                        {
-                            balloonContent: point.name,
-                            hintContent: `${index + 1}. ${point.name}`,
-                            iconContent: (index + 1).toString()
-                        },
-                        {
-                            preset: 'islands#redStretchyIcon',
-                            iconColor: point.is_premium ? '#FFD700' : colors[index % colors.length]
-                        }
-                    );
-                    
-                    placemark.events.add('click', () => {
-                        showPointInfo(point);
-                    });
-                    
-                    map.geoObjects.add(placemark);
-                });
-                
-                document.getElementById('loading').style.display = 'none';
+      function initMap() {
+    ymaps.ready(() => {
+        map = new ymaps.Map('map', {
+            center: [60.7136, 28.7431],
+            zoom: 14,
+            controls: ['zoomControl', 'geolocationControl']
+        });
+        
+        // Названия твоих файлов иконок (по порядку точек в БД)
+        const iconNames = ['castle', 'library', 'monrepos', 'tower', 'square'];
+        
+        points.forEach((point, index) => {
+            const placemark = new ymaps.Placemark(
+                [parseFloat(point.latitude), parseFloat(point.longitude)],
+                {
+                    balloonContent: point.name,
+                    hintContent: point.name
+                },
+                {
+                    iconLayout: 'default#image',
+                    iconImageHref: `https://whiteside46.github.io/vyborg-tour/icons/${iconNames[index]}.png`,
+                    iconImageSize: [50, 50],
+                    iconImageOffset: [-25, -50]
+                }
+            );
+            
+            // Premium-точки крупнее
+            if (point.is_premium) {
+                placemark.options.set('iconImageSize', [60, 60]);
+                placemark.options.set('iconImageOffset', [-30, -60]);
+            }
+            
+            placemark.events.add('click', () => {
+                showPointInfo(point);
             });
-        }
+            
+            map.geoObjects.add(placemark);
+        });
+        
+        document.getElementById('loading').style.display = 'none';
+    });
+}
+
         
         function showPointInfo(point) {
             const content = `
@@ -221,3 +230,4 @@
     </script>
 </body>
 </html>
+
