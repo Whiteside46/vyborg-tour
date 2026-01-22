@@ -25,19 +25,21 @@
         height: 100vh;
     }
     
-    /* СЕПИЯ ТОЛЬКО ДЛЯ СЛОЕВ КАРТЫ */
-    .ymaps-layers-pane {
+    /* СЕПИЯ ДЛЯ ФОНА КАРТЫ */
+    .ymaps-layers-pane,
+    .ymaps-layer {
         filter: grayscale(100%) sepia(35%) brightness(92%) !important;
         -webkit-filter: grayscale(100%) sepia(35%) brightness(92%) !important;
     }
     
-    /* ЦВЕТНЫЕ ИКОНКИ */
-    .ymaps-image-with-content img,
+    /* ЦВЕТНЫЕ ИКОНКИ ПОВЕРХ */
+    .ymaps-overlay-pane,
     .ymaps-image-with-content,
-    ymaps[class*="placemark"],
-    [class*="ground-pane"] ~ * {
+    .ymaps-image-with-content img {
         filter: none !important;
         -webkit-filter: none !important;
+        position: relative;
+        z-index: 1000;
     }
     
     #loading {
@@ -235,6 +237,7 @@
     </script>
 </body>
 </html>
+
 
 
 
