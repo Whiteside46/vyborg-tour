@@ -8,7 +8,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=296d4616-ae0d-4671-ac28-87e99dd2b07f"></script>
     
-    <style>
+  <style>
     * {
         margin: 0;
         padding: 0;
@@ -25,21 +25,34 @@
         height: 100vh;
     }
     
-    /* СЕПИЯ ДЛЯ ФОНА КАРТЫ */
-    .ymaps-layers-pane,
-    .ymaps-layer {
+    /* СЕПИЯ ТОЛЬКО ДЛЯ ТАЙЛОВ КАРТЫ - ЖЁСТКАЯ ИЗОЛЯЦИЯ */
+    .ymaps-layers-pane > * {
         filter: grayscale(100%) sepia(35%) brightness(92%) !important;
         -webkit-filter: grayscale(100%) sepia(35%) brightness(92%) !important;
     }
     
-    /* ЦВЕТНЫЕ ИКОНКИ ПОВЕРХ */
-    .ymaps-overlay-pane,
-    .ymaps-image-with-content,
-    .ymaps-image-with-content img {
+    .ymaps-layers-pane canvas,
+    .ymaps-layers-pane img {
+        filter: grayscale(100%) sepia(35%) brightness(92%) !important;
+        -webkit-filter: grayscale(100%) sepia(35%) brightness(92%) !important;
+    }
+    
+    /* ВСЁ ОСТАЛЬНОЕ (ИКОНКИ, КОНТРОЛЫ) ЦВЕТНОЕ */
+    .ymaps-panes-pane:not(.ymaps-layers-pane),
+    .ymaps-events-pane,
+    .ymaps-ground-pane,
+    .ymaps-places-pane,
+    .ymaps-overlay-pane {
         filter: none !important;
         -webkit-filter: none !important;
-        position: relative;
-        z-index: 1000;
+    }
+    
+    /* ИКОНКИ ТОЧНО ЦВЕТНЫЕ */
+    .ymaps-image-with-content,
+    .ymaps-image-with-content *,
+    ymaps[class*="image"] {
+        filter: none !important;
+        -webkit-filter: none !important;
     }
     
     #loading {
@@ -113,6 +126,7 @@
         margin-left: 8px;
     }
 </style>
+
 
 
 </head>
@@ -237,6 +251,7 @@
     </script>
 </body>
 </html>
+
 
 
 
