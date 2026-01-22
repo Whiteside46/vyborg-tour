@@ -120,15 +120,42 @@
         let map;
         let points = [];
         
-        // Загрузка точек из API
+        // Загрузка точек из API (ИСПРАВЛЕНО)
         async function loadPoints() {
             try {
+                console.log('Загружаю точки из:', API_URL);
                 const response = await fetch(API_URL);
-                points = await response.json();
+                const data = await response.json();
+                
+                console.log('Полученные данные:', data);
+                
+                // Проверяем формат данных и преобразуем в массив
+                if (Array.isArray(data)) {
+                    points = data;
+                } else if (data && typeof data === 'object') {
+                    // Если пришёл объект, берём первое значение которое массив
+                    const firstArray = Object.values(data).find(v => Array.isArray(v));
+                    if (firstArray) {
+                        points = firstArray;
+                    } else {
+                        // Если это один объект - делаем массив из одного элемента
+                        points = [data];
+                    }
+                } else {
+                    points = [];
+                }
+                
+                console.log('Точек для отображения:', points.length, points);
+                
+                if (points.length === 0) {
+                    document.getElementById('loading').innerHTML = 'Нет точек для отображения';
+                    return;
+                }
+                
                 initMap();
             } catch (error) {
                 console.error('Ошибка загрузки точек:', error);
-                document.getElementById('loading').innerHTML = 'Ошибка загрузки данных';
+                document.getElementById('loading').innerHTML = 'Ошибка: ' + error.message;
             }
         }
         
@@ -194,4 +221,3 @@
     </script>
 </body>
 </html>
-
