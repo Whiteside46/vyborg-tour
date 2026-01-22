@@ -25,36 +25,6 @@
         height: 100vh;
     }
     
-    /* СЕПИЯ ТОЛЬКО ДЛЯ ТАЙЛОВ КАРТЫ - ЖЁСТКАЯ ИЗОЛЯЦИЯ */
-    .ymaps-layers-pane > * {
-        filter: grayscale(100%) sepia(35%) brightness(92%) !important;
-        -webkit-filter: grayscale(100%) sepia(35%) brightness(92%) !important;
-    }
-    
-    .ymaps-layers-pane canvas,
-    .ymaps-layers-pane img {
-        filter: grayscale(100%) sepia(35%) brightness(92%) !important;
-        -webkit-filter: grayscale(100%) sepia(35%) brightness(92%) !important;
-    }
-    
-    /* ВСЁ ОСТАЛЬНОЕ (ИКОНКИ, КОНТРОЛЫ) ЦВЕТНОЕ */
-    .ymaps-panes-pane:not(.ymaps-layers-pane),
-    .ymaps-events-pane,
-    .ymaps-ground-pane,
-    .ymaps-places-pane,
-    .ymaps-overlay-pane {
-        filter: none !important;
-        -webkit-filter: none !important;
-    }
-    
-    /* ИКОНКИ ТОЧНО ЦВЕТНЫЕ */
-    .ymaps-image-with-content,
-    .ymaps-image-with-content *,
-    ymaps[class*="image"] {
-        filter: none !important;
-        -webkit-filter: none !important;
-    }
-    
     #loading {
         position: fixed;
         top: 50%;
@@ -190,7 +160,6 @@
             controls: ['zoomControl', 'geolocationControl']
         });
         
-        // Названия твоих файлов иконок (по порядку точек в БД)
         const iconNames = ['castle', 'library', 'monrepos', 'tower', 'square'];
         
         points.forEach((point, index) => {
@@ -208,7 +177,6 @@
                 }
             );
             
-            // Premium-точки крупнее
             if (point.is_premium) {
                 placemark.options.set('iconImageSize', [60, 60]);
                 placemark.options.set('iconImageOffset', [-30, -60]);
@@ -222,6 +190,28 @@
         });
         
         document.getElementById('loading').style.display = 'none';
+        
+        // ПРИМЕНЯЕМ СЕПИЮ ЧЕРЕЗ JAVASCRIPT
+        setTimeout(() => {
+            applySepia();
+        }, 500);
+    });
+}
+
+// ФУНКЦИЯ ПРИМЕНЕНИЯ СЕПИИ - ДОБАВЬ ПОСЛЕ initMap()
+function applySepia() {
+    // Находим слой с тайлами карты
+    const layersPane = document.querySelector('.ymaps-layers-pane');
+    if (layersPane) {
+        layersPane.style.filter = 'grayscale(100%) sepia(35%) brightness(92%)';
+        layersPane.style.webkitFilter = 'grayscale(100%) sepia(35%) brightness(92%)';
+    }
+    
+    // Убираем фильтр с иконок
+    const images = document.querySelectorAll('.ymaps-image-with-content');
+    images.forEach(img => {
+        img.style.filter = 'none';
+        img.style.webkitFilter = 'none';
     });
 }
 
@@ -251,6 +241,7 @@
     </script>
 </body>
 </html>
+
 
 
 
