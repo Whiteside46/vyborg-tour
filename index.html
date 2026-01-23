@@ -111,15 +111,134 @@
             font-weight: bold;
             margin-left: 8px;
         }
+
+        /* ========== ДОБАВЛЕНО: Стили для кнопки маршрута ========== */
+        .route-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.2s;
+        }
+        
+        .route-btn:active {
+            transform: scale(0.98);
+        }
+        /* ========== КОНЕЦ: Стили для кнопки маршрута ========== */
+
+        /* ========== ДОБАВЛЕНО: Стили для панели маршрута ========== */
+        #route-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            padding: 20px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            z-index: 999;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            border-radius: 20px 20px 0 0;
+        }
+
+        #route-panel.active {
+            transform: translateY(0);
+        }
+
+        .route-info h3 {
+            margin: 0 0 16px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .route-details {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .route-details span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .route-panel-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 8px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .route-panel-btn.close {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .route-panel-btn.close:active {
+            background: #e0e0e0;
+        }
+
+        .route-panel-btn.open-app {
+            background: #ffcc00;
+            color: #000;
+            margin-bottom: 8px;
+        }
+
+        .route-panel-btn.open-app:active {
+            background: #e6b800;
+        }
+        /* ========== КОНЕЦ: Стили для панели маршрута ========== */
     </style>
 </head>
 <body>
     <div id="loading">Загрузка карты...</div>
     <div id="map"></div>
+    
     <div id="pointInfo" class="point-info">
         <button class="close-btn" onclick="closeInfo()">✕</button>
         <div id="pointContent"></div>
     </div>
+
+    <!-- ========== ДОБАВЛЕНО: Панель маршрута ========== -->
+    <div id="route-panel">
+        <div class="route-info">
+            <h3 id="route-title">Маршрут построен</h3>
+            <div class="route-details" id="route-details">
+                <!-- Контент генерируется JS -->
+            </div>
+            <button class="route-panel-btn open-app" id="open-yandex-btn">
+                📱 Открыть в Яндекс.Картах
+            </button>
+            <button class="route-panel-btn close" onclick="clearRoute()">
+                ✕ Закрыть маршрут
+            </button>
+        </div>
+    </div>
+    <!-- ========== КОНЕЦ: Панель маршрута ========== -->
 
     <script>
         let tg = window.Telegram.WebApp;
@@ -129,6 +248,10 @@
         const API_URL = 'https://6300143-tb547847.twc1.net/webhook/get-points';
         let map;
         let points = [];
+        
+        // ========== ДОБАВЛЕНО: Переменная для хранения текущего маршрута ========== 
+        let currentRoute = null;
+        // ========== КОНЕЦ: Переменная для хранения текущего маршрута ========== 
         
         async function loadPoints() {
             try {
@@ -251,6 +374,7 @@
         }
         
         function showPointInfo(point) {
+            // ========== ИЗМЕНЕНО: Добавлена кнопка построения маршрута ========== 
             const content = `
                 <h2>
                     ${point.name}
@@ -261,7 +385,11 @@
                 ${point.audio_url ? `<audio controls style="width: 100%; margin-top: 10px;">
                     <source src="${point.audio_url}" type="audio/mpeg">
                 </audio>` : ''}
+                <button class="route-btn" onclick="buildRoute(${point.latitude}, ${point.longitude}, '${point.name.replace(/'/g, "\\'")}')">
+                    🚶 Построить маршрут
+                </button>
             `;
+            // ========== КОНЕЦ: Добавлена кнопка построения маршрута ========== 
             
             document.getElementById('pointContent').innerHTML = content;
             document.getElementById('pointInfo').classList.add('active');
@@ -270,6 +398,111 @@
         function closeInfo() {
             document.getElementById('pointInfo').classList.remove('active');
         }
+
+        // ========== ДОБАВЛЕНО: Функция построения маршрута ========== 
+        function buildRoute(pointLat, pointLon, pointName) {
+            // Удаляем предыдущий маршрут, если был
+            if (currentRoute) {
+                map.geoObjects.remove(currentRoute);
+            }
+            
+            // Получаем геолокацию пользователя
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const userLat = position.coords.latitude;
+                    const userLon = position.coords.longitude;
+                    
+                    // Строим пешеходный маршрут через Яндекс.Карты API
+                    ymaps.route([
+                        [userLat, userLon], // от пользователя
+                        [pointLat, pointLon] // до точки
+                    ], {
+                        mapStateAutoApply: true, // автоматически подстроить масштаб карты
+                        routingMode: 'pedestrian' // пешеходный маршрут
+                    }).then(
+                        function(route) {
+                            // Сохраняем маршрут
+                            currentRoute = route;
+                            
+                            // Настраиваем внешний вид маршрута
+                            route.getPaths().options.set({
+                                strokeColor: '#667eea', // фиолетовый цвет
+                                strokeWidth: 5,
+                                opacity: 0.8
+                            });
+                            
+                            // Добавляем маршрут на карту
+                            map.geoObjects.add(route);
+                            
+                            // Получаем данные о маршруте
+                            const distance = route.getHumanLength(); // "2,5 км"
+                            const duration = route.getHumanTime(); // "35 мин"
+                            
+                            // Показываем панель с информацией
+                            showRouteInfo(pointName, distance, duration, pointLat, pointLon);
+                            
+                            console.log(`Маршрут построен: ${distance}, ${duration}`);
+                        },
+                        function(error) {
+                            alert('❌ Невозможно построить маршрут: ' + error.message);
+                            console.error('Ошибка маршрутизации:', error);
+                        }
+                    );
+                },
+                function(error) {
+                    alert('❌ Не удалось определить ваше местоположение. Включите геолокацию в настройках.');
+                    console.error('Ошибка геолокации:', error);
+                }
+            );
+        }
+        // ========== КОНЕЦ: Функция построения маршрута ========== 
+
+        // ========== ДОБАВЛЕНО: Показ панели с информацией о маршруте ========== 
+        function showRouteInfo(name, distance, duration, lat, lon) {
+            document.getElementById('route-title').textContent = `Маршрут до: ${name}`;
+            document.getElementById('route-details').innerHTML = `
+                <span>📍 ${distance}</span>
+                <span>⏱️ ${duration}</span>
+            `;
+            
+            // Настраиваем кнопку перехода в Яндекс.Карты
+            const openBtn = document.getElementById('open-yandex-btn');
+            openBtn.onclick = function() {
+                openInYandexMaps(lat, lon);
+            };
+            
+            // Показываем панель
+            document.getElementById('route-panel').classList.add('active');
+        }
+        // ========== КОНЕЦ: Показ панели с информацией о маршруте ========== 
+
+        // ========== ДОБАВЛЕНО: Очистка маршрута ========== 
+        function clearRoute() {
+            if (currentRoute) {
+                map.geoObjects.remove(currentRoute);
+                currentRoute = null;
+            }
+            document.getElementById('route-panel').classList.remove('active');
+            console.log('Маршрут очищен');
+        }
+        // ========== КОНЕЦ: Очистка маршрута ========== 
+
+        // ========== ДОБАВЛЕНО: Открытие в нативном приложении Яндекс.Карт ========== 
+        function openInYandexMaps(lat, lon) {
+            // Deeplink для открытия маршрута в приложении Яндекс.Карт
+            const url = `yandexmaps://maps.yandex.ru/?rtext=~${lat},${lon}&rtt=pd`;
+            
+            // Пытаемся открыть в приложении
+            window.location.href = url;
+            
+            // Если приложение не установлено, откроется веб-версия
+            setTimeout(() => {
+                window.open(`https://yandex.ru/maps/?rtext=~${lat},${lon}&rtt=pd`, '_blank');
+            }, 1000);
+            
+            console.log('Открытие в Яндекс.Картах:', lat, lon);
+        }
+        // ========== КОНЕЦ: Открытие в нативном приложении Яндекс.Карт ========== 
         
         loadPoints();
     </script>
