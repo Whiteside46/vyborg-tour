@@ -36,7 +36,8 @@
         #map [class*="image"],
         #map [class*="image"] *,
         #map img[src*=".png"],
-        #map img[src*="github"] {
+        #map img[src*="github"],
+        #map img[src*="jsdelivr"] {
             filter: none !important;
         }
         
@@ -143,6 +144,8 @@
                     points = [];
                 }
                 
+                console.log('Загружено точек:', points.length);
+                
                 if (points.length === 0) {
                     document.getElementById('loading').innerHTML = 'Нет точек для отображения';
                     return;
@@ -150,103 +153,102 @@
                 
                 initMap();
             } catch (error) {
+                console.error('Ошибка загрузки:', error);
                 document.getElementById('loading').innerHTML = 'Ошибка: ' + error.message;
             }
         }
         
-       function initMap() {
-    ymaps.ready(() => {
-        map = new ymaps.Map('map', {
-            center: [60.7136, 28.7431],
-            zoom: 14,
-            controls: ['zoomControl', 'geolocationControl']
-        });
-        
-        const iconNames = ['castle', 'library', 'monrepos', 'tower', 'square'];
-        
-        points.forEach((point, index) => {
-            const placemark = new ymaps.Placemark(
-                [parseFloat(point.latitude), parseFloat(point.longitude)],
+        function initMap() {
+            ymaps.ready(() => {
+                map = new ymaps.Map('map', {
+                    center: [60.7136, 28.7431],
+                    zoom: 14,
+                    controls: ['zoomControl', 'geolocationControl']
+                });
+                
+                // ДИНАМИЧЕСКОЕ СОЗДАНИЕ МЕТОК ИЗ БД
+                points.forEach((point) => {
+                    // Получаем имя иконки из БД, если нет - используем дефолтную
+                    const iconFile = point.icon_name || 'default';
+                    
+                    console.log(`Создаю метку: ${point.name}, иконка: ${iconFile}`);
+                    
+                    const placemark = new ymaps.Placemark(
+                        [parseFloat(point.latitude), parseFloat(point.longitude)],
+                        {
+                            balloonContent: point.name,
+                            hintContent: point.name
+                        },
+                        {
+                            iconLayout: 'default#image',
+                            iconImageHref: `https://cdn.jsdelivr.net/gh/Whiteside46/vyborg-tour@main/${iconFile}.png`,
+                            iconImageSize: [50, 50],
+                            iconImageOffset: [-25, -50]
+                        }
+                    );
+                    
+                    // Premium-точки крупнее
+                    if (point.is_premium) {
+                        placemark.options.set('iconImageSize', [60, 60]);
+                        placemark.options.set('iconImageOffset', [-30, -60]);
+                    }
+                    
+                    placemark.events.add('click', () => {
+                        showPointInfo(point);
+                    });
+                    
+                    map.geoObjects.add(placemark);
+                });
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                getUserLocation();
+            });
+        }
+
+        // ГЕОЛОКАЦИЯ
+        let userLocationMarker = null;
+
+        function getUserLocation() {
+            if (tg.initDataUnsafe?.user?.location) {
+                const location = tg.initDataUnsafe.user.location;
+                showUserLocation(location.latitude, location.longitude);
+            } else if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        showUserLocation(position.coords.latitude, position.coords.longitude);
+                    },
+                    (error) => {
+                        console.log('Геолокация недоступна:', error);
+                    }
+                );
+            }
+        }
+
+        function showUserLocation(lat, lon) {
+            if (userLocationMarker) {
+                map.geoObjects.remove(userLocationMarker);
+            }
+            
+            userLocationMarker = new ymaps.Placemark(
+                [lat, lon],
                 {
-                    balloonContent: point.name,
-                    hintContent: point.name
+                    hintContent: 'Вы здесь'
                 },
                 {
-                    iconLayout: 'default#image',
-                    iconImageHref: `https://whiteside46.github.io/vyborg-tour/${iconNames[index]}.png`,
-                    iconImageSize: [50, 50],
-                    iconImageOffset: [-25, -50]
+                    preset: 'islands#blueCircleDotIcon',
+                    iconColor: '#3b5998'
                 }
             );
             
-            if (point.is_premium) {
-                placemark.options.set('iconImageSize', [60, 60]);
-                placemark.options.set('iconImageOffset', [-30, -60]);
-            }
+            map.geoObjects.add(userLocationMarker);
             
-            placemark.events.add('click', () => {
-                showPointInfo(point);
+            map.setCenter([lat, lon], 15, {
+                duration: 1000
             });
             
-            map.geoObjects.add(placemark);
-        });
-        
-        document.getElementById('loading').style.display = 'none';
-        
-        // ГЕОЛОКАЦИЯ - ДОБАВЬ ЭТО
-        getUserLocation();
-    });
-}
-
-// ФУНКЦИЯ ГЕОЛОКАЦИИ - ДОБАВЬ ПОСЛЕ initMap()
-let userLocationMarker = null;
-
-function getUserLocation() {
-    // Проверяем есть ли геолокация в Telegram WebApp
-    if (tg.initDataUnsafe?.user?.location) {
-        const location = tg.initDataUnsafe.user.location;
-        showUserLocation(location.latitude, location.longitude);
-    } else if (navigator.geolocation) {
-        // Запрашиваем через браузер
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                showUserLocation(position.coords.latitude, position.coords.longitude);
-            },
-            (error) => {
-                console.log('Геолокация недоступна:', error);
-            }
-        );
-    }
-}
-
-function showUserLocation(lat, lon) {
-    // Удаляем старую метку если есть
-    if (userLocationMarker) {
-        map.geoObjects.remove(userLocationMarker);
-    }
-    
-    // Создаём синюю метку "Вы здесь"
-    userLocationMarker = new ymaps.Placemark(
-        [lat, lon],
-        {
-            hintContent: 'Вы здесь'
-        },
-        {
-            preset: 'islands#blueCircleDotIcon',
-            iconColor: '#3b5998'
+            console.log('Ваше местоположение:', lat, lon);
         }
-    );
-    
-    map.geoObjects.add(userLocationMarker);
-    
-    // Центрируем карту на пользователя
-    map.setCenter([lat, lon], 15, {
-        duration: 1000
-    });
-    
-    console.log('Ваше местоположение:', lat, lon);
-}
-
         
         function showPointInfo(point) {
             const content = `
@@ -273,4 +275,3 @@ function showUserLocation(lat, lon) {
     </script>
 </body>
 </html>
-
