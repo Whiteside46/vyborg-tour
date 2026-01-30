@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Выборг - Гид</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=296d4616-ae0d-4671-ac28-87e99dd2b07f"></script>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=296d4616-ae0d-4671-ac28-87e99dd2b07f&load=package.full"></script>
     <style>
         * {
             margin: 0;
@@ -401,7 +401,7 @@
 
                 points.forEach(point => {
                     const iconFile = point.iconname || 'default';
-                    console.log(point.name, iconFile);
+                    console.log('Добавляем точку:', point.name, iconFile);
 
                     const placemark = new ymaps.Placemark(
                         [parseFloat(point.latitude), parseFloat(point.longitude)],
@@ -511,6 +511,7 @@
         function buildRoute(pointLat, pointLon, pointName) {
             if (currentRoute) {
                 map.geoObjects.remove(currentRoute);
+                currentRoute = null;
             }
 
             navigator.geolocation.getCurrentPosition(
@@ -518,37 +519,43 @@
                     const userLat = position.coords.latitude;
                     const userLon = position.coords.longitude;
 
-                    // ИСПРАВЛЕНО: Используем multiRouter для пешеходного маршрута
-                    const multiRoute = new ymaps.multiRouter.MultiRoute({
-                        referencePoints: [
-                            [userLat, userLon],
-                            [pointLat, pointLon]
-                        ],
-                        params: {
-                            routingMode: 'pedestrian'  // ПЕШЕХОДНЫЙ РЕЖИМ
+                    console.log('Строим маршрут от:', userLat, userLon, 'до:', pointLat, pointLon);
+
+                    // ИСПРАВЛЕНО: Правильный способ для пешеходного маршрута
+                    ymaps.route([
+                        [userLat, userLon],
+                        [parseFloat(pointLat), parseFloat(pointLon)]
+                    ], {
+                        mapStateAutoApply: false,
+                        multiRoute: true,
+                        routingMode: 'pedestrian'
+                    }).then(
+                        function(route) {
+                            currentRoute = route;
+                            
+                            // Настройка внешнего вида
+                            route.getPaths().options.set({
+                                strokeColor: '#667eea',
+                                strokeWidth: 5,
+                                opacity: 0.8
+                            });
+
+                            map.geoObjects.add(route);
+
+                            const distance = route.getHumanLength();
+                            const duration = route.getHumanTime();
+
+                            console.log('Маршрут построен:', distance, duration);
+                            showRouteInfo(pointName, distance, duration, pointLat, pointLon);
+                        },
+                        function(error) {
+                            console.error('Ошибка построения маршрута:', error);
+                            alert('Не удалось построить маршрут. Попробуйте ещё раз.');
                         }
-                    }, {
-                        wayPointStartIconColor: "#3b5998",
-                        wayPointFinishIconColor: "#667eea",
-                        routeStrokeWidth: 5,
-                        routeStrokeColor: "#667eea",
-                        opacity: 0.8
-                    });
-
-                    map.geoObjects.add(multiRoute);
-                    currentRoute = multiRoute;
-
-                    multiRoute.model.events.add('requestsuccess', function () {
-                        const activeRoute = multiRoute.getActiveRoute();
-                        const distance = activeRoute.properties.get("distance").text;
-                        const duration = activeRoute.properties.get("duration").text;
-
-                        showRouteInfo(pointName, distance, duration, pointLat, pointLon);
-                        console.log('Маршрут построен:', distance, duration);
-                    });
+                    );
                 },
                 function(error) {
-                    alert('Не удалось определить ваше местоположение. Пожалуйста, разрешите доступ к геолокации.');
+                    alert('Не удалось определить ваше местоположение. Разрешите доступ к геолокации.');
                     console.error('Geolocation error:', error);
                 }
             );
@@ -653,6 +660,7 @@
         function buildMultiPointRoute() {
             if (currentRoute) {
                 map.geoObjects.remove(currentRoute);
+                currentRoute = null;
             }
 
             navigator.geolocation.getCurrentPosition(
@@ -665,40 +673,46 @@
                         ...selectedRoutePoints.map(p => [parseFloat(p.latitude), parseFloat(p.longitude)])
                     ];
 
-                    // ИСПРАВЛЕНО: Используем multiRouter для пешеходного маршрута
-                    const multiRoute = new ymaps.multiRouter.MultiRoute({
-                        referencePoints: routePoints,
-                        params: {
-                            routingMode: 'pedestrian'  // ПЕШЕХОДНЫЙ РЕЖИМ
+                    console.log('Строим мультимаршрут через', routePoints.length, 'точек');
+
+                    // ИСПРАВЛЕНО: Пешеходный мультимаршрут
+                    ymaps.route(routePoints, {
+                        mapStateAutoApply: false,
+                        multiRoute: true,
+                        routingMode: 'pedestrian'
+                    }).then(
+                        function(route) {
+                            currentRoute = route;
+
+                            route.getPaths().options.set({
+                                strokeColor: '#667eea',
+                                strokeWidth: 5,
+                                opacity: 0.8
+                            });
+
+                            // Нумеруем промежуточные точки
+                            route.getWayPoints().each(function (wayPoint, index) {
+                                if (index > 0 && index < routePoints.length - 1) {
+                                    wayPoint.options.set({
+                                        preset: 'islands#violetCircleIcon',
+                                        iconContent: index
+                                    });
+                                }
+                            });
+
+                            map.geoObjects.add(route);
+
+                            const distance = route.getHumanLength();
+                            const duration = route.getHumanTime();
+
+                            console.log('Мультимаршрут построен:', distance, duration);
+                            showMultiRouteInfo(distance, duration);
+                        },
+                        function(error) {
+                            console.error('Ошибка построения мультимаршрута:', error);
+                            alert('Не удалось построить маршрут.');
                         }
-                    }, {
-                        wayPointStartIconColor: "#3b5998",
-                        routeStrokeWidth: 5,
-                        routeStrokeColor: "#667eea",
-                        opacity: 0.8
-                    });
-
-                    map.geoObjects.add(multiRoute);
-                    currentRoute = multiRoute;
-
-                    multiRoute.model.events.add('requestsuccess', function () {
-                        const activeRoute = multiRoute.getActiveRoute();
-                        const distance = activeRoute.properties.get("distance").text;
-                        const duration = activeRoute.properties.get("duration").text;
-
-                        // Нумеруем промежуточные точки
-                        multiRoute.getWayPoints().each(function (wayPoint, index) {
-                            if (index > 0) {
-                                wayPoint.options.set({
-                                    preset: 'islands#violetCircleIcon',
-                                    iconContent: index
-                                });
-                            }
-                        });
-
-                        showMultiRouteInfo(distance, duration);
-                        console.log('Мультимаршрут:', selectedRoutePoints.length, 'точек');
-                    });
+                    );
                 },
                 function(error) {
                     alert('Не удалось определить местоположение.');
