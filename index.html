@@ -3,32 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Выборг Гид</title>
-    
+    <title>Выборг - Гид</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=296d4616-ae0d-4671-ac28-87e99dd2b07f"></script>
-    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
             overflow: hidden;
         }
-        
+
         #map {
             width: 100vw;
             height: 100vh;
         }
-        
+
         #map .ymaps-layers-pane {
             filter: grayscale(100%) sepia(35%) brightness(92%) !important;
         }
-        
+
         #map ymaps,
         #map ymaps *,
         #map [class*="image"],
@@ -38,7 +36,7 @@
         #map img[src*="jsdelivr"] {
             filter: none !important;
         }
-        
+
         #loading {
             position: fixed;
             top: 50%;
@@ -50,7 +48,7 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             z-index: 1000;
         }
-        
+
         .point-info {
             position: fixed;
             bottom: 0;
@@ -66,27 +64,27 @@
             max-height: 70vh;
             overflow-y: auto;
         }
-        
+
         .point-info.active {
             transform: translateY(0);
         }
-        
+
         .point-info h2 {
             margin-bottom: 10px;
             color: #333;
         }
-        
+
         .point-info img {
             width: 100%;
             border-radius: 10px;
             margin: 10px 0;
         }
-        
+
         .point-info p {
             color: #666;
             line-height: 1.6;
         }
-        
+
         .close-btn {
             position: absolute;
             top: 20px;
@@ -99,7 +97,7 @@
             cursor: pointer;
             font-size: 18px;
         }
-        
+
         .premium-badge {
             background: gold;
             color: #333;
@@ -127,12 +125,11 @@
             gap: 8px;
             transition: transform 0.2s;
         }
-        
+
         .route-btn:active {
             transform: scale(0.98);
         }
 
-        /* ========== ДОБАВЛЕНО: Кнопка добавления в маршрут ========== */
         .add-to-route-btn {
             width: 100%;
             padding: 14px;
@@ -150,7 +147,7 @@
             gap: 8px;
             transition: all 0.2s;
         }
-        
+
         .add-to-route-btn:active {
             transform: scale(0.98);
             background: #f0f0ff;
@@ -160,7 +157,6 @@
             background: #667eea;
             color: white;
         }
-        /* ========== КОНЕЦ: Кнопка добавления в маршрут ========== */
 
         #route-panel {
             position: fixed;
@@ -237,7 +233,6 @@
             background: #e6b800;
         }
 
-        /* ========== ДОБАВЛЕНО: Список точек маршрута ========== */
         .route-points-list {
             margin-bottom: 12px;
             max-height: 150px;
@@ -287,9 +282,7 @@
             font-size: 14px;
             flex-shrink: 0;
         }
-        /* ========== КОНЕЦ: Список точек маршрута ========== */
 
-        /* ========== ДОБАВЛЕНО: Плавающая кнопка маршрута ========== */
         #floating-route-btn {
             position: fixed;
             bottom: 20px;
@@ -333,13 +326,12 @@
             font-size: 12px;
             font-weight: bold;
         }
-        /* ========== КОНЕЦ: Плавающая кнопка маршрута ========== */
     </style>
 </head>
 <body>
     <div id="loading">Загрузка карты...</div>
     <div id="map"></div>
-    
+
     <div id="pointInfo" class="point-info">
         <button class="close-btn" onclick="closeInfo()">✕</button>
         <div id="pointContent"></div>
@@ -347,41 +339,30 @@
 
     <div id="route-panel">
         <div class="route-info">
-            <h3 id="route-title">Маршрут построен</h3>
-            <!-- ========== ДОБАВЛЕНО: Список точек ========== -->
+            <h3 id="route-title"></h3>
             <div class="route-points-list" id="route-points-list" style="display: none;"></div>
-            <!-- ========== КОНЕЦ: Список точек ========== -->
             <div class="route-details" id="route-details"></div>
-            <button class="route-panel-btn open-app" id="open-yandex-btn">
-                📱 Открыть в Яндекс.Картах
-            </button>
-            <button class="route-panel-btn close" onclick="clearRoute()">
-                ✕ Закрыть маршрут
-            </button>
+            <button class="route-panel-btn open-app" id="open-yandex-btn">📱 Открыть в Яндекс.Картах</button>
+            <button class="route-panel-btn close" onclick="clearRoute()">✕ Закрыть маршрут</button>
         </div>
     </div>
 
-    <!-- ========== ДОБАВЛЕНО: Плавающая кнопка ========== -->
     <button id="floating-route-btn" onclick="showRouteBuilder()">
         🗺️
         <span class="route-badge" id="route-badge">0</span>
     </button>
-    <!-- ========== КОНЕЦ: Плавающая кнопка ========== -->
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
-        
+
         const API_URL = 'https://6300143-tb547847.twc1.net/webhook/get-points';
         let map;
         let points = [];
         let currentRoute = null;
-        
-        // ========== ДОБАВЛЕНО: Массив выбранных точек для маршрута ========== 
         let selectedRoutePoints = [];
-        // ========== КОНЕЦ: Массив выбранных точек для маршрута ========== 
-        
+
         async function loadPoints() {
             try {
                 const response = await fetch(API_URL);
@@ -391,25 +372,25 @@
                     points = data;
                 } else if (data && typeof data === 'object') {
                     const firstArray = Object.values(data).find(v => Array.isArray(v));
-                    points = firstArray || [data];
+                    points = firstArray || data;
                 } else {
                     points = [];
                 }
-                
+
                 console.log('Загружено точек:', points.length);
-                
+
                 if (points.length === 0) {
-                    document.getElementById('loading').innerHTML = 'Нет точек для отображения';
+                    document.getElementById('loading').innerHTML = '⚠️ Нет данных';
                     return;
                 }
-                
+
                 initMap();
             } catch (error) {
                 console.error('Ошибка загрузки:', error);
-                document.getElementById('loading').innerHTML = 'Ошибка: ' + error.message;
+                document.getElementById('loading').innerHTML = '❌ ' + error.message;
             }
         }
-        
+
         function initMap() {
             ymaps.ready(() => {
                 map = new ymaps.Map('map', {
@@ -417,12 +398,11 @@
                     zoom: 14,
                     controls: ['zoomControl', 'geolocationControl']
                 });
-                
-                points.forEach((point) => {
-                    const iconFile = point.icon_name || 'default';
-                    
-                    console.log(`Создаю метку: ${point.name}, иконка: ${iconFile}`);
-                    
+
+                points.forEach(point => {
+                    const iconFile = point.iconname || 'default';
+                    console.log(point.name, iconFile);
+
                     const placemark = new ymaps.Placemark(
                         [parseFloat(point.latitude), parseFloat(point.longitude)],
                         {
@@ -431,26 +411,22 @@
                         },
                         {
                             iconLayout: 'default#image',
-                            iconImageHref: `https://cdn.jsdelivr.net/gh/Whiteside46/vyborg-tour@main/${iconFile}.png`,
+                            iconImageHref: `https://cdn.jsdelivr.net/gh/Whiteside46/vyborg-tour/main/${iconFile}.png`,
                             iconImageSize: [50, 50],
                             iconImageOffset: [-25, -50]
                         }
                     );
-                    
-                    if (point.is_premium) {
+
+                    if (point.ispremium) {
                         placemark.options.set('iconImageSize', [60, 60]);
                         placemark.options.set('iconImageOffset', [-30, -60]);
                     }
-                    
-                    placemark.events.add('click', () => {
-                        showPointInfo(point);
-                    });
-                    
+
+                    placemark.events.add('click', () => showPointInfo(point));
                     map.geoObjects.add(placemark);
                 });
-                
+
                 document.getElementById('loading').style.display = 'none';
-                
                 getUserLocation();
             });
         }
@@ -463,11 +439,11 @@
                 showUserLocation(location.latitude, location.longitude);
             } else if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (position) => {
+                    position => {
                         showUserLocation(position.coords.latitude, position.coords.longitude);
                     },
-                    (error) => {
-                        console.log('Геолокация недоступна:', error);
+                    error => {
+                        console.log('Геолокация отключена', error);
                     }
                 );
             }
@@ -477,114 +453,103 @@
             if (userLocationMarker) {
                 map.geoObjects.remove(userLocationMarker);
             }
-            
+
             userLocationMarker = new ymaps.Placemark(
                 [lat, lon],
-                {
-                    hintContent: 'Вы здесь'
-                },
+                { hintContent: 'Вы здесь' },
                 {
                     preset: 'islands#blueCircleDotIcon',
                     iconColor: '#3b5998'
                 }
             );
-            
+
             map.geoObjects.add(userLocationMarker);
-            
-            map.setCenter([lat, lon], 15, {
-                duration: 1000
-            });
-            
-            console.log('Ваше местоположение:', lat, lon);
+            map.setCenter([lat, lon], 15, { duration: 1000 });
+            console.log('Местоположение:', lat, lon);
         }
-        
+
         function showPointInfo(point) {
-            // ========== ИЗМЕНЕНО: Добавлена кнопка "Добавить в маршрут" ========== 
             const isInRoute = selectedRoutePoints.some(p => p.id === point.id);
-            
+
             const content = `
                 <h2>
                     ${point.name}
-                    ${point.is_premium ? '<span class="premium-badge">PREMIUM</span>' : ''}
+                    ${point.ispremium ? '<span class="premium-badge">PREMIUM</span>' : ''}
                 </h2>
-                ${point.photo_url ? `<img src="${point.photo_url}" alt="${point.name}">` : ''}
+                ${point.photourl ? `<img src="${point.photourl}" alt="${point.name}">` : ''}
                 <p>${point.description}</p>
-                ${point.audio_url ? `<audio controls style="width: 100%; margin-top: 10px;">
-                    <source src="${point.audio_url}" type="audio/mpeg">
-                </audio>` : ''}
-                <button class="route-btn" onclick="buildRouteTo(${point.id})">
-                    🚶 Построить маршрут сюда
+                ${point.audiourl ? `
+                    <audio controls style="width: 100%; margin-top: 10px;">
+                        <source src="${point.audiourl}" type="audio/mpeg">
+                    </audio>
+                ` : ''}
+                <button class="route-btn" onclick="buildRouteTo('${point.id}')">
+                    🧭 Построить маршрут
                 </button>
-                <button class="add-to-route-btn ${isInRoute ? 'added' : ''}" onclick="toggleRoutePoint(${point.id})">
-                    ${isInRoute ? '✓ Добавлено в маршрут' : '+ Добавить в маршрут'}
+                <button class="add-to-route-btn ${isInRoute ? 'added' : ''}" 
+                        onclick="toggleRoutePoint('${point.id}')">
+                    ${isInRoute ? '✓ В маршруте' : '➕ Добавить в маршрут'}
                 </button>
             `;
-            // ========== КОНЕЦ: Добавлена кнопка "Добавить в маршрут" ========== 
-            
+
             document.getElementById('pointContent').innerHTML = content;
             document.getElementById('pointInfo').classList.add('active');
         }
-        
+
         function closeInfo() {
             document.getElementById('pointInfo').classList.remove('active');
         }
 
-        // ========== ИЗМЕНЕНО: Построение маршрута до одной точки с автозакрытием ========== 
         function buildRouteTo(pointId) {
             const point = points.find(p => p.id === pointId);
             if (!point) return;
-            
+
             buildRoute(point.latitude, point.longitude, point.name);
-            
-            // АВТОМАТИЧЕСКИ ЗАКРЫВАЕМ КАРТОЧКУ
             closeInfo();
         }
-        // ========== КОНЕЦ: Построение маршрута до одной точки с автозакрытием ========== 
 
         function buildRoute(pointLat, pointLon, pointName) {
             if (currentRoute) {
                 map.geoObjects.remove(currentRoute);
             }
-            
+
             navigator.geolocation.getCurrentPosition(
                 function(position) {
                     const userLat = position.coords.latitude;
                     const userLon = position.coords.longitude;
-                    
-                    ymaps.route([
-                        [userLat, userLon],
-                        [pointLat, pointLon]
-                    ], {
-                        mapStateAutoApply: true,
-                        routingMode: 'pedestrian'
-                    }).then(
-                        function(route) {
-                            currentRoute = route;
-                            
-                            route.getPaths().options.set({
-                                strokeColor: '#667eea',
-                                strokeWidth: 5,
-                                opacity: 0.8
-                            });
-                            
-                            map.geoObjects.add(route);
-                            
-                            const distance = route.getHumanLength();
-                            const duration = route.getHumanTime();
-                            
-                            showRouteInfo(pointName, distance, duration, pointLat, pointLon);
-                            
-                            console.log(`Маршрут построен: ${distance}, ${duration}`);
-                        },
-                        function(error) {
-                            alert('❌ Невозможно построить маршрут: ' + error.message);
-                            console.error('Ошибка маршрутизации:', error);
+
+                    // ИСПРАВЛЕНО: Используем multiRouter для пешеходного маршрута
+                    const multiRoute = new ymaps.multiRouter.MultiRoute({
+                        referencePoints: [
+                            [userLat, userLon],
+                            [pointLat, pointLon]
+                        ],
+                        params: {
+                            routingMode: 'pedestrian'  // ПЕШЕХОДНЫЙ РЕЖИМ
                         }
-                    );
+                    }, {
+                        wayPointStartIconColor: "#3b5998",
+                        wayPointFinishIconColor: "#667eea",
+                        routeStrokeWidth: 5,
+                        routeStrokeColor: "#667eea",
+                        opacity: 0.8
+                    });
+
+                    map.geoObjects.add(multiRoute);
+                    currentRoute = multiRoute;
+
+                    multiRoute.model.events.add('requestsuccess', function () {
+                        const activeRoute = multiRoute.getActiveRoute();
+                        const distance = activeRoute.properties.get("distance").text;
+                        const duration = activeRoute.properties.get("duration").text;
+
+                        showRouteInfo(pointName, distance, duration, pointLat, pointLon);
+                        console.log('Маршрут построен:', distance, duration);
+                    });
                 },
                 function(error) {
-                    alert('❌ Не удалось определить ваше местоположение. Включите геолокацию в настройках.');
-                    console.error('Ошибка геолокации:', error);
+                    alert('Не удалось определить ваше местоположение. Пожалуйста, разрешите доступ к геолокации.');
+                    console.error('Geolocation error:', error);
                 }
             );
         }
@@ -595,16 +560,12 @@
                 <span>📍 ${distance}</span>
                 <span>⏱️ ${duration}</span>
             `;
-            
-            // ========== ИЗМЕНЕНО: Скрываем список точек для простого маршрута ========== 
+
             document.getElementById('route-points-list').style.display = 'none';
-            // ========== КОНЕЦ: Скрываем список точек для простого маршрута ========== 
-            
+
             const openBtn = document.getElementById('open-yandex-btn');
-            openBtn.onclick = function() {
-                openInYandexMaps(lat, lon);
-            };
-            
+            openBtn.onclick = () => openInYandexMaps(lat, lon);
+
             document.getElementById('route-panel').classList.add('active');
         }
 
@@ -618,28 +579,23 @@
         }
 
         function openInYandexMaps(lat, lon) {
-            const url = `yandexmaps://maps.yandex.ru/?rtext=~${lat},${lon}&rtt=pd`;
+            const url = `yandexmaps://maps.yandex.ru/?rtext=~${lat},${lon}&rttpd`;
             window.location.href = url;
-            
             setTimeout(() => {
-                window.open(`https://yandex.ru/maps/?rtext=~${lat},${lon}&rtt=pd`, '_blank');
+                window.open(`https://yandex.ru/maps?rtext=~${lat},${lon}&rttpd`, '_blank');
             }, 1000);
-            
-            console.log('Открытие в Яндекс.Картах:', lat, lon);
+            console.log('Открытие в Я.Картах:', lat, lon);
         }
 
-        // ========== ДОБАВЛЕНО: Функции для работы с множественными точками ========== 
         function toggleRoutePoint(pointId) {
             const point = points.find(p => p.id === pointId);
             if (!point) return;
-            
+
             const index = selectedRoutePoints.findIndex(p => p.id === pointId);
-            
+
             if (index !== -1) {
-                // Удаляем точку
                 selectedRoutePoints.splice(index, 1);
             } else {
-                // Добавляем точку
                 selectedRoutePoints.push({
                     id: point.id,
                     name: point.name,
@@ -647,17 +603,15 @@
                     longitude: point.longitude
                 });
             }
-            
+
             updateFloatingButton();
-            
-            // Обновляем карточку
             showPointInfo(point);
         }
 
         function updateFloatingButton() {
             const btn = document.getElementById('floating-route-btn');
             const badge = document.getElementById('route-badge');
-            
+
             if (selectedRoutePoints.length > 0) {
                 btn.classList.add('active');
                 badge.textContent = selectedRoutePoints.length;
@@ -668,30 +622,27 @@
 
         function showRouteBuilder() {
             if (selectedRoutePoints.length === 0) return;
-            
-            // Закрываем карточку точки
+
             closeInfo();
-            
-            // Показываем список точек
+
             const listHtml = selectedRoutePoints.map((point, index) => `
                 <div class="route-point-item">
                     <div class="route-point-number">${index + 1}</div>
                     <div class="route-point-name">${point.name}</div>
-                    <button class="route-point-remove" onclick="removeRoutePoint(${point.id})">✕</button>
+                    <button class="route-point-remove" onclick="removeRoutePoint('${point.id}')">✕</button>
                 </div>
             `).join('');
-            
+
             document.getElementById('route-points-list').innerHTML = listHtml;
             document.getElementById('route-points-list').style.display = 'block';
-            
-            // Строим маршрут через все точки
+
             buildMultiPointRoute();
         }
 
         function removeRoutePoint(pointId) {
             selectedRoutePoints = selectedRoutePoints.filter(p => p.id !== pointId);
             updateFloatingButton();
-            
+
             if (selectedRoutePoints.length === 0) {
                 clearRoute();
             } else {
@@ -703,82 +654,75 @@
             if (currentRoute) {
                 map.geoObjects.remove(currentRoute);
             }
-            
+
             navigator.geolocation.getCurrentPosition(
                 function(position) {
                     const userLat = position.coords.latitude;
                     const userLon = position.coords.longitude;
-                    
-                    // Создаем массив координат: [user, point1, point2, ...]
+
                     const routePoints = [
                         [userLat, userLon],
                         ...selectedRoutePoints.map(p => [parseFloat(p.latitude), parseFloat(p.longitude)])
                     ];
-                    
-                    ymaps.route(routePoints, {
-                        mapStateAutoApply: true,
-                        routingMode: 'pedestrian'
-                    }).then(
-                        function(route) {
-                            currentRoute = route;
-                            
-                            route.getPaths().options.set({
-                                strokeColor: '#667eea',
-                                strokeWidth: 5,
-                                opacity: 0.8
-                            });
-                            
-                            // Нумеруем промежуточные точки
-                            route.getWayPoints().each(function(wayPoint, index) {
-                                if (index > 0) { // Пропускаем стартовую точку
-                                    wayPoint.options.set({
-                                        preset: 'islands#violetCircleIcon',
-                                        iconContent: index
-                                    });
-                                }
-                            });
-                            
-                            map.geoObjects.add(route);
-                            
-                            const distance = route.getHumanLength();
-                            const duration = route.getHumanTime();
-                            
-                            showMultiRouteInfo(distance, duration);
-                            
-                            console.log(`Маршрут через ${selectedRoutePoints.length} точек построен`);
-                        },
-                        function(error) {
-                            alert('❌ Невозможно построить маршрут: ' + error.message);
-                            console.error('Ошибка маршрутизации:', error);
+
+                    // ИСПРАВЛЕНО: Используем multiRouter для пешеходного маршрута
+                    const multiRoute = new ymaps.multiRouter.MultiRoute({
+                        referencePoints: routePoints,
+                        params: {
+                            routingMode: 'pedestrian'  // ПЕШЕХОДНЫЙ РЕЖИМ
                         }
-                    );
+                    }, {
+                        wayPointStartIconColor: "#3b5998",
+                        routeStrokeWidth: 5,
+                        routeStrokeColor: "#667eea",
+                        opacity: 0.8
+                    });
+
+                    map.geoObjects.add(multiRoute);
+                    currentRoute = multiRoute;
+
+                    multiRoute.model.events.add('requestsuccess', function () {
+                        const activeRoute = multiRoute.getActiveRoute();
+                        const distance = activeRoute.properties.get("distance").text;
+                        const duration = activeRoute.properties.get("duration").text;
+
+                        // Нумеруем промежуточные точки
+                        multiRoute.getWayPoints().each(function (wayPoint, index) {
+                            if (index > 0) {
+                                wayPoint.options.set({
+                                    preset: 'islands#violetCircleIcon',
+                                    iconContent: index
+                                });
+                            }
+                        });
+
+                        showMultiRouteInfo(distance, duration);
+                        console.log('Мультимаршрут:', selectedRoutePoints.length, 'точек');
+                    });
                 },
                 function(error) {
-                    alert('❌ Не удалось определить ваше местоположение.');
-                    console.error('Ошибка геолокации:', error);
+                    alert('Не удалось определить местоположение.');
+                    console.error('Geolocation error:', error);
                 }
             );
         }
 
         function showMultiRouteInfo(distance, duration) {
-            document.getElementById('route-title').textContent = `Маршрут через ${selectedRoutePoints.length} точек`;
+            document.getElementById('route-title').textContent = `Маршрут по ${selectedRoutePoints.length} точкам`;
             document.getElementById('route-details').innerHTML = `
                 <span>📍 ${distance}</span>
                 <span>⏱️ ${duration}</span>
             `;
-            
-            // Для множественного маршрута - ссылка на веб-версию
+
             const openBtn = document.getElementById('open-yandex-btn');
             openBtn.onclick = function() {
-                // Формируем координаты для Яндекс.Карт
                 const coords = selectedRoutePoints.map(p => `${p.longitude},${p.latitude}`).join('~');
-                window.open(`https://yandex.ru/maps/?rtext=~${coords}&rtt=pd`, '_blank');
+                window.open(`https://yandex.ru/maps?rtext=~${coords}&rttpd`, '_blank');
             };
-            
+
             document.getElementById('route-panel').classList.add('active');
         }
-        // ========== КОНЕЦ: Функции для работы с множественными точками ========== 
-        
+
         loadPoints();
     </script>
 </body>
