@@ -132,7 +132,30 @@
             transform: scale(0.98);
         }
 
-        /* ========== ДОБАВЛЕНО: Кнопка добавления в маршрут ========== */
+        /* ========== ДОБАВЛЕНО: Кнопка "Читать полную историю" ========== */
+        .read-more-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 12px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.2s;
+        }
+        
+        .read-more-btn:active {
+            transform: scale(0.98);
+        }
+        /* ========== КОНЕЦ: Кнопка "Читать полную историю" ========== */
+
         .add-to-route-btn {
             width: 100%;
             padding: 14px;
@@ -160,7 +183,6 @@
             background: #667eea;
             color: white;
         }
-        /* ========== КОНЕЦ: Кнопка добавления в маршрут ========== */
 
         #route-panel {
             position: fixed;
@@ -237,7 +259,6 @@
             background: #e6b800;
         }
 
-        /* ========== ДОБАВЛЕНО: Список точек маршрута ========== */
         .route-points-list {
             margin-bottom: 12px;
             max-height: 150px;
@@ -287,9 +308,7 @@
             font-size: 14px;
             flex-shrink: 0;
         }
-        /* ========== КОНЕЦ: Список точек маршрута ========== */
 
-        /* ========== ДОБАВЛЕНО: Плавающая кнопка маршрута ========== */
         #floating-route-btn {
             position: fixed;
             bottom: 20px;
@@ -333,7 +352,6 @@
             font-size: 12px;
             font-weight: bold;
         }
-        /* ========== КОНЕЦ: Плавающая кнопка маршрута ========== */
     </style>
 </head>
 <body>
@@ -348,9 +366,7 @@
     <div id="route-panel">
         <div class="route-info">
             <h3 id="route-title">Маршрут построен</h3>
-            <!-- ========== ДОБАВЛЕНО: Список точек ========== -->
             <div class="route-points-list" id="route-points-list" style="display: none;"></div>
-            <!-- ========== КОНЕЦ: Список точек ========== -->
             <div class="route-details" id="route-details"></div>
             <button class="route-panel-btn open-app" id="open-yandex-btn">
                 📱 Открыть в Яндекс.Картах
@@ -361,12 +377,10 @@
         </div>
     </div>
 
-    <!-- ========== ДОБАВЛЕНО: Плавающая кнопка ========== -->
     <button id="floating-route-btn" onclick="showRouteBuilder()">
         🗺️
         <span class="route-badge" id="route-badge">0</span>
     </button>
-    <!-- ========== КОНЕЦ: Плавающая кнопка ========== -->
 
     <script>
         let tg = window.Telegram.WebApp;
@@ -377,10 +391,7 @@
         let map;
         let points = [];
         let currentRoute = null;
-        
-        // ========== ДОБАВЛЕНО: Массив выбранных точек для маршрута ========== 
         let selectedRoutePoints = [];
-        // ========== КОНЕЦ: Массив выбранных точек для маршрута ========== 
         
         async function loadPoints() {
             try {
@@ -498,8 +509,8 @@
             console.log('Ваше местоположение:', lat, lon);
         }
         
+        // ========== ИЗМЕНЕНО: Добавлена кнопка "Читать полную историю" ========== 
         function showPointInfo(point) {
-            // ========== ИЗМЕНЕНО: Добавлена кнопка "Добавить в маршрут" ========== 
             const isInRoute = selectedRoutePoints.some(p => p.id === point.id);
             
             const content = `
@@ -512,6 +523,13 @@
                 ${point.audio_url ? `<audio controls style="width: 100%; margin-top: 10px;">
                     <source src="${point.audio_url}" type="audio/mpeg">
                 </audio>` : ''}
+                
+                ${point.articleUrl ? `
+                    <button class="read-more-btn" onclick="openFullArticle('${point.articleUrl}')">
+                        📖 Читать полную историю
+                    </button>
+                ` : ''}
+                
                 <button class="route-btn" onclick="buildRouteTo(${point.id})">
                     🚶 Построить маршрут сюда
                 </button>
@@ -519,27 +537,34 @@
                     ${isInRoute ? '✓ Добавлено в маршрут' : '+ Добавить в маршрут'}
                 </button>
             `;
-            // ========== КОНЕЦ: Добавлена кнопка "Добавить в маршрут" ========== 
             
             document.getElementById('pointContent').innerHTML = content;
             document.getElementById('pointInfo').classList.add('active');
         }
         
+        // ========== ДОБАВЛЕНО: Функция открытия статьи ========== 
+        function openFullArticle(url) {
+            if (window.Telegram && window.Telegram.WebApp) {
+                // Открываем в Telegram с Instant View
+                Telegram.WebApp.openLink(url);
+            } else {
+                // Открываем в браузере
+                window.open(url, '_blank');
+            }
+        }
+        // ========== КОНЕЦ: Функция открытия статьи ========== 
+        
         function closeInfo() {
             document.getElementById('pointInfo').classList.remove('active');
         }
 
-        // ========== ИЗМЕНЕНО: Построение маршрута до одной точки с автозакрытием ========== 
         function buildRouteTo(pointId) {
             const point = points.find(p => p.id === pointId);
             if (!point) return;
             
             buildRoute(point.latitude, point.longitude, point.name);
-            
-            // АВТОМАТИЧЕСКИ ЗАКРЫВАЕМ КАРТОЧКУ
             closeInfo();
         }
-        // ========== КОНЕЦ: Построение маршрута до одной точки с автозакрытием ========== 
 
         function buildRoute(pointLat, pointLon, pointName) {
             if (currentRoute) {
@@ -596,9 +621,7 @@
                 <span>⏱️ ${duration}</span>
             `;
             
-            // ========== ИЗМЕНЕНО: Скрываем список точек для простого маршрута ========== 
             document.getElementById('route-points-list').style.display = 'none';
-            // ========== КОНЕЦ: Скрываем список точек для простого маршрута ========== 
             
             const openBtn = document.getElementById('open-yandex-btn');
             openBtn.onclick = function() {
@@ -628,7 +651,6 @@
             console.log('Открытие в Яндекс.Картах:', lat, lon);
         }
 
-        // ========== ДОБАВЛЕНО: Функции для работы с множественными точками ========== 
         function toggleRoutePoint(pointId) {
             const point = points.find(p => p.id === pointId);
             if (!point) return;
@@ -636,10 +658,8 @@
             const index = selectedRoutePoints.findIndex(p => p.id === pointId);
             
             if (index !== -1) {
-                // Удаляем точку
                 selectedRoutePoints.splice(index, 1);
             } else {
-                // Добавляем точку
                 selectedRoutePoints.push({
                     id: point.id,
                     name: point.name,
@@ -649,8 +669,6 @@
             }
             
             updateFloatingButton();
-            
-            // Обновляем карточку
             showPointInfo(point);
         }
 
@@ -669,10 +687,8 @@
         function showRouteBuilder() {
             if (selectedRoutePoints.length === 0) return;
             
-            // Закрываем карточку точки
             closeInfo();
             
-            // Показываем список точек
             const listHtml = selectedRoutePoints.map((point, index) => `
                 <div class="route-point-item">
                     <div class="route-point-number">${index + 1}</div>
@@ -684,7 +700,6 @@
             document.getElementById('route-points-list').innerHTML = listHtml;
             document.getElementById('route-points-list').style.display = 'block';
             
-            // Строим маршрут через все точки
             buildMultiPointRoute();
         }
 
@@ -709,7 +724,6 @@
                     const userLat = position.coords.latitude;
                     const userLon = position.coords.longitude;
                     
-                    // Создаем массив координат: [user, point1, point2, ...]
                     const routePoints = [
                         [userLat, userLon],
                         ...selectedRoutePoints.map(p => [parseFloat(p.latitude), parseFloat(p.longitude)])
@@ -728,9 +742,8 @@
                                 opacity: 0.8
                             });
                             
-                            // Нумеруем промежуточные точки
                             route.getWayPoints().each(function(wayPoint, index) {
-                                if (index > 0) { // Пропускаем стартовую точку
+                                if (index > 0) {
                                     wayPoint.options.set({
                                         preset: 'islands#violetCircleIcon',
                                         iconContent: index
@@ -767,17 +780,14 @@
                 <span>⏱️ ${duration}</span>
             `;
             
-            // Для множественного маршрута - ссылка на веб-версию
             const openBtn = document.getElementById('open-yandex-btn');
             openBtn.onclick = function() {
-                // Формируем координаты для Яндекс.Карт
                 const coords = selectedRoutePoints.map(p => `${p.longitude},${p.latitude}`).join('~');
                 window.open(`https://yandex.ru/maps/?rtext=~${coords}&rtt=pd`, '_blank');
             };
             
             document.getElementById('route-panel').classList.add('active');
         }
-        // ========== КОНЕЦ: Функции для работы с множественными точками ========== 
         
         loadPoints();
     </script>
